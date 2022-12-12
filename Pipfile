@@ -1,0 +1,14 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pyserini = "==0.19.1"
+torch = "==1.13.0"
+faiss-cpu = "==1.7.3"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"

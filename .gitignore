@@ -1,0 +1,7 @@
+.venv
+.vscode
+Pipfile.lock
+*miracl*
+indexes
+runfiles
+test
