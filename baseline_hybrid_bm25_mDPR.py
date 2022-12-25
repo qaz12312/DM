@@ -30,20 +30,23 @@ def read_qrels(qrels_path:str, qid_docids:dict)->dict:
     The relevance score is normalized by the average relevance score for that query.
     """
     qrels = defaultdict(dict)
-    with open(qrels_path, 'r') as f:
-        for li in f.readlines():
-            qid, _, docid, rank, rel, *_ = li.split(' ')
-            qid_docids[qid].append(docid)
-            qrels[qid][docid] = float(rel)
-    for qid in qrels:
-        normalize_avg(qrels[qid])
+    try:
+        with open(qrels_path, 'r') as f:
+            for li in f.readlines():
+                qid, _, docid, rank, rel, *_ = li.split(' ')
+                qid_docids[qid].append(docid)
+                qrels[qid][docid] = float(rel)
+        for qid in qrels:
+            normalize_avg(qrels[qid])
+    except FileNotFoundError:
+        print(f'File not found: {qrels_path}')
     return qrels
 
 
 for alpha in np.arange(0.0, 0.11, 0.01): # alpha * BM25 + (1-alpha) * mDPR
     all_lang_results = list() # for logging
     qid_docids = defaultdict(list) # qid -> [docid1, docid2, ...]
-    for lang in ['ar','bn','es','fa','fi','fr','hi','id','ja','ko','ru','sw','te','th', 'zh']: # ,'en'
+    for lang in ['ar','bn','en','es','fa','fi','fr','hi','id','ja','ko','ru','sw','te','th', 'zh']:
         mdpr_results = read_qrels(f'{MDPR_DIR}/{lang}-{dsp}.txt', qid_docids)
         bm25_results = read_qrels(f'{BM25_DIR}/{lang}_{dsp}.txt', qid_docids)
         """
