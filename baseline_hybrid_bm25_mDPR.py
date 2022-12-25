@@ -9,7 +9,7 @@ from collections import defaultdict
 dsp=sys.argv[1] # 'dev' or 'test-a'
 
 BM25_DIR = './results/BM25s'
-MDPR_DIR = './results/mDPRs'
+MDPR_DIR = f'./results/mDPRs/{dsp}'
 HYBRIDS_DIR = './results/hybrids'
 LOGGING_PATH = './results/all_lang_results.log'
 
@@ -19,8 +19,8 @@ def normalize_avg(qid_docids:dict)->None:
     Normalize the scores of the documents for a given query by the average score of the documents for that query. 
     """
     avg_val = sum(qid_docids.values()) / len(qid_docids)
-    for k in qid_docids:
-        qid_docids[k] /= avg_val
+    for docid in qid_docids:
+        qid_docids[docid] /= avg_val
 
 
 def read_qrels(qrels_path:str, qid_docids:dict)->dict:
@@ -39,20 +39,20 @@ def read_qrels(qrels_path:str, qid_docids:dict)->dict:
         for qid in qrels:
             normalize_avg(qrels[qid])
     except FileNotFoundError:
-        print(f'File not found: {qrels_path}')
+        print(f'File [{qrels_path}] not found.')
     return qrels
 
 
-for alpha in np.arange(0.0, 0.11, 0.01): # alpha * BM25 + (1-alpha) * mDPR
+for alpha in [0.08]:# np.arange(0.06, 0.15, 0.01): # alpha * BM25 + (1-alpha) * mDPR
     all_lang_results = list() # for logging
-    qid_docids = defaultdict(list) # qid -> [docid1, docid2, ...]
-    for lang in ['ar','bn','en','es','fa','fi','fr','hi','id','ja','ko','ru','sw','te','th', 'zh']:
+    for lang in ['ar','bn','en','es','fa','fi','fr','hi','id','ja','ko','ru','sw','te','th','zh']:
+        qid_docids = defaultdict(list) # qid -> [docid1, docid2, ...]
         mdpr_results = read_qrels(f'{MDPR_DIR}/{lang}-{dsp}.txt', qid_docids)
         bm25_results = read_qrels(f'{BM25_DIR}/{lang}_{dsp}.txt', qid_docids)
         """
         Hybrid
         """
-        target_path = f'{HYBRIDS_DIR}/{lang}_{dsp}_{alpha}.txt'
+        target_path = f'{HYBRIDS_DIR}/{lang}.txt'
         with open(target_path, 'w') as f:
             for qid in qid_docids:
                 rank_list = list()
@@ -71,6 +71,7 @@ for alpha in np.arange(0.0, 0.11, 0.01): # alpha * BM25 + (1-alpha) * mDPR
         Evaluate
         """
         ans_path = f'miracl/miracl-v1.0-{lang}/qrels/qrels.miracl-v1.0-{lang}-{dsp}.tsv'
+
         # recall@100
         temp = os.popen(f'python -m pyserini.eval.trec_eval \
             -c -m recall.100 {ans_path} \
@@ -82,15 +83,15 @@ for alpha in np.arange(0.0, 0.11, 0.01): # alpha * BM25 + (1-alpha) * mDPR
             -c -M 100 -m ndcg_cut.10 {ans_path} \
             {target_path}').readlines()[5]
         ndcg = temp.split('\t')[-1].replace('\n','')
-
         all_lang_results.append(f'|{lang}|{recall}|{ndcg}|')
+
         print(f'{lang} done')
 
     """
     Logging
     """
     with open(LOGGING_PATH, 'a') as f:
-        f.write(f'\n+ lang={lang} alpha={alpha}\n')
+        f.write(f'\n+ alpha={alpha}\n')
         f.write('\t|lang|recall@100|nDCG@10|\n\t|-|-|-|\n')
         for item in all_lang_results:
             f.write(f"\t{item}\n")
