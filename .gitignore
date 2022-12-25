@@ -6,3 +6,7 @@ indexes
 runfiles
 test
 evaluations
+topics
+trash
+*.zip
+data/
