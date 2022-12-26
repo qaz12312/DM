@@ -10,8 +10,10 @@ transformers = "*"
 simpletransformers = "*"
 googletrans = "==4.0.0rc1"
 async-google-trans-new = "*"
+matplotlib = "*"
 
 [dev-packages]
+ipykernel = "*"
 
 [requires]
 python_version = "3.8"

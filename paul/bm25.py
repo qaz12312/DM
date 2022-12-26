@@ -5,7 +5,7 @@ if not os.path.exists('topics'):
     os.makedirs('topics')
 
 dsp='test-a'
-beta=0.13
+beta=0.08
 
 for lang in ['ar','bn','en','es','fa','fi','fr','hi','id','ko','ru','sw','te','th']:
     try:
