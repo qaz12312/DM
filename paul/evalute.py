@@ -1,6 +1,6 @@
 import os
 dsp='dev'
-runfiles_dir='data/hybrid'
+runfiles_dir='data/model_hybrid'
 
 print('|lang|recall@100|nDCG@10|\n|-|-|-|')
 langs=['ar','bn','en','es','fa','fi','fr','hi','id','ja','ko','ru','sw','te','th','zh']
