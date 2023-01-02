@@ -10,7 +10,6 @@ def normalize(dc:dict):
     for k in dc:
         dc[k]/=ss
 
-alpha=0.09
 dsp='dev'
 algos=['bm25_0.13_h1000','mDPR_h1000','bm25_0.08_h1000']
 langs=['ar','bn','en','es','fa','fi','fr','hi','id','ja','ko','ru','sw','te','th','zh']
@@ -57,10 +56,14 @@ for lang in langs:
                 for i in range(len(algos)):
                     if len(Runfiles[i])==0:
                         x.append(0.0)
+                        x.append(0.0)
                     elif docid in Runfiles[i][tid]:
                         x.append(Runfiles[i][tid][docid])
+                        x.append(sqrt(Runfiles[i][tid][docid]))
                     else:
                         x.append(0.0)
+                        x.append(0.0)
+
                 X.append(x)
                 Y.append(rel)    
     except:

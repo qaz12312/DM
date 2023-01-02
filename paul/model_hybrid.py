@@ -3,6 +3,7 @@ import tensorflow.keras.layers as layers
 import tensorflow.keras.losses as losses
 import tensorflow.keras.optimizers as optimizers
 import tensorflow.keras.metrics as metrics
+from tensorflow_addons.losses import sigmoid_focal_crossentropy
 import json
 import os
 import numpy as np
@@ -12,11 +13,14 @@ val_dsp=f'dev'
 
 def create_model(N):
     xin=layers.Input(shape=(N,))
-    x=layers.Dense(1,activation='sigmoid')(xin)
+    x=layers.Dense(N)(xin)
+    x=layers.BatchNormalization()(x)
+    x=layers.Add()([x,xin])
+    x=layers.Dense(1,activation='sigmoid')(x)
     model=models.Model(inputs=xin,outputs=x)
     model.compile(
         metrics=[metrics.binary_accuracy],
-        loss=losses.binary_crossentropy,
+        loss=sigmoid_focal_crossentropy,
         optimizer=optimizers.Adam()
     )
     return model
@@ -31,14 +35,14 @@ for lang in langs:
         X_train=np.array(X_train)
         Y_train=np.array(Y_train)
     model=create_model(len(X_train[0]))
-    model.fit(X_train,Y_train,validation_split=0.3,epochs=10,batch_size=10)
+    model.fit(X_train,Y_train,validation_split=0.3,epochs=50,batch_size=60)
     
     with open(cand_path,'r') as f:
         X_test,L_test=json.load(f)
         X_test=np.array(X_test)
     
     
-    Y_test=model.predict(X_test)
+    Y_test=model.predict(X_test,batch_size=60)
     for i in range(len(L_test)):
         L_test[i].append(float(Y_test[i]))
     

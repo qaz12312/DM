@@ -8,6 +8,8 @@ pyserini = "==0.19.1"
 faiss-cpu = "==1.7.3"
 matplotlib = "*"
 tensorflow = "*"
+tensorflow-addons = "*"
+torch = "*"
 
 [dev-packages]
 ipykernel = "*"

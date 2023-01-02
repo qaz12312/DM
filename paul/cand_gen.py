@@ -46,8 +46,9 @@ for lang in langs:
                 if tid not in Runfile:
                     Runfile[tid]={}
                 if docid not in Runfile[tid]:
-                    Runfile[tid][docid]=[0.0 for _ in range(len(algos))]
-                Runfile[tid][docid][i]=runfile[tid][docid]
+                    Runfile[tid][docid]=[0.0 for _ in range(len(algos)*2)]
+                Runfile[tid][docid][2*i]=runfile[tid][docid]
+                Runfile[tid][docid][2*i+1]=sqrt(runfile[tid][docid])
 
     Result=[]
     X=[]
