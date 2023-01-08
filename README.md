@@ -2,7 +2,7 @@
 WSDM https://project-miracl.github.io/index.html#overview
 ## BERT
 ```
-git clone https://huggingface.co/datasets/miracl/miracl
+sh baseline_setup.sh
 python test_beart.py
 ```
 |lang|nDCG@10|
