@@ -1,11 +1,10 @@
+PROJECT_PATH = './main'
+RESULT_PATH = F'{PROJECT_PATH}/results'
+
 SURPRISE_LANGUAGES = ['de', 'yo']
 NEW_LANGUAGES = ['es', 'fa', 'fr', 'hi', 'zh'] + SURPRISE_LANGUAGES
 LANGUAGES = ['ar', 'bn', 'en', 'es', 'fa', 'fi', 'fr', 'hi', 'id', 'ja', 'ko', 'ru', 'sw', 'te', 'th', 'zh'] + SURPRISE_LANGUAGES
-PROJECT_PATH = './transforms'
-RESULT_PATH = F'{PROJECT_PATH}/results'
-"""
-{'en': {'train':[], 'dev':[], 'testB':[], 'testA':[]}}
-"""
+
 CORPUS_NAME = 'miracl/miracl-corpus'
 DATASET_PATHS = {
     lang: {
