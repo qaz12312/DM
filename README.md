@@ -1,10 +1,12 @@
 # DM
 WSDM https://project-miracl.github.io/index.html#overview
 ## BERT
++ 修改 `utils.py` 裡的 `PROJECT_PATH`、`RESULT_PATH` 路徑
 ```
 sh baseline_setup.sh
 python test_beart.py
 ```
+### results
 |lang|nDCG@10|
 |-|-|
 |ar|0.2958|
