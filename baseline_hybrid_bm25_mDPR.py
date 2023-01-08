@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 from collections import defaultdict
+import json
 from utils import *
 dataset_type=sys.argv[1] # 'dev' or 'test-a'
 
@@ -88,6 +89,8 @@ for alpha in [0.09]:# np.arange(0.1, 0.13, 0.01): # alpha * BM25 + (1-alpha) * m
 """
 Logging
 """
+with open(LOGGING_PATH, 'w') as fp:
+    json.dump(all_lang_logs, fp)
 # with open(LOGGING_PATH, 'w') as f:
 #     f.write('\t|lang|recall@100|nDCG@10|\n\t|-|-|-|\n')
 #     for item in all_lang_results:
