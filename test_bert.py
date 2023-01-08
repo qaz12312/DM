@@ -1,3 +1,6 @@
+"""
+Run this script to test the performance of BERT on MIRACL v1.0.
+"""
 import os
 from collections import defaultdict
 import datasets
@@ -6,6 +9,7 @@ import torch
 import textwrap
 from scipy.spatial.distance import cosine
 import numpy as np
+from pyserini.eval.trec_eval import trec_eval
 print('cuda: ', torch.cuda.is_available())
 
 SURPRISE_LANGUAGES = ['de', 'yo']
@@ -42,6 +46,8 @@ for lang in LANGUAGES:
 
 def load_topics(file_path:str)->dict:
     """
+    Load topics from file.
+
     Return:
         {'query_id' : 'query', ...}
     """
@@ -57,6 +63,8 @@ def load_topics(file_path:str)->dict:
 
 def load_qrels(file_path:str)->dict:
     """
+    Load qrels from file.
+
     Return:
         { 'query_id': { 'artical_passage_id': relevance , ...}, ...} 
     """
@@ -73,6 +81,8 @@ def load_qrels(file_path:str)->dict:
 
 def load_corpus(lang:str)->dict:
     """
+    Load corpus from dataset.
+
     Return:
         { 'artical_passage_id': ('artical_title', 'passage'), ...}
     """
@@ -81,7 +91,7 @@ def load_corpus(lang:str)->dict:
     return docid2doc_dict
 
 
-def show_results(lang:str, file_paths:list):
+def show_results(lang:str, file_paths:list)->dict:
     """
     Args:
         filepaths: (topics_path, qrels_path)
@@ -121,22 +131,27 @@ def show_results(lang:str, file_paths:list):
 
 
 class BSA():
-    def __init__(self, model_name:str, device:str):
+    def __init__(self, model_name:str, device:str)->None:
         self.model = transformers.BertModel.from_pretrained(model_name)
         self.tokenizer = transformers.BertTokenizer.from_pretrained(model_name) # 將文本轉換為 token ids
         self.device = device
         self.model = self.model.to(self.device)
 
-    def transform_input(self, input_text:str):
+    def transform_input(self, input_text:str)->tuple:
+        """
+        Return:
+            input_ids: torch.Size(batch_size, len(input_text+[CLS]))
+            attention_mask: torch.Size(batch_size, len(input_text+[CLS]))
+        """
         input_ids = self.tokenizer.encode(input_text, return_tensors='pt')
         attention_mask = input_ids.ne(0).long() # 將 tensor 中非 0 的元素轉換為 1
         return input_ids, attention_mask
 
-    def forward(self, input_text:str):
+    def forward(self, input_text:str)->tuple:
         """
         Return:
             last_hidden_state: torch.Size(batch_size, len(input_text+[CLS]), len(word_embedding))
-            pooler_output: tanh(FCN(last_hidden_state))，torch.Size(batch_size, len(word_embedding))
+            pooler_output: tanh(FCN(last_hidden_state)). torch.Size(batch_size, len(word_embedding))
         """
         parts = textwrap.wrap(input_text, width=510)
         last_hidden = None
@@ -155,7 +170,14 @@ class BSA():
         return last_hidden, pooler
 
 
-def rank_rels(query_vec:list, passage_vec_dict:dict, top_k:int=10):
+def rank_rels(query_vec:list, passage_vec_dict:dict, top_k:int=10)->list:
+    """
+    Args:
+        query_vec: np.array([1, LEN_QUERY])
+        passage_vec_dict: { 'docid': np.array([1, LEN_PASSAGE]), ...}
+    Return:
+        rank_list: [(docid, score), ...]
+    """
     results = list()
     
     for docid, p_vec in passage_vec_dict.items():
@@ -166,14 +188,14 @@ def rank_rels(query_vec:list, passage_vec_dict:dict, top_k:int=10):
     return rank_list[:top_k]
 
 
-def check_dir(path:str):
+def check_dir(path:str)->None:
     if not os.path.exists(path):
         # Create a new directory because it does not exist
         os.makedirs(path)
         print(f"{path} is created!")
 
 
-def write_result(file_path:str, data:dict):
+def write_result(file_path:str, data:dict)->None:
     with open(file_path, 'w') as f:
         for qid in data:
             i = 0
@@ -182,11 +204,21 @@ def write_result(file_path:str, data:dict):
                 i += 1
 
 
+def evaluateNDCG(qrels_path:str, result_path:str, metric:str='ndcg')->float:
+    """
+    evaluate NDCG@10
+    """
+    ndcg = trec_eval(result_path, qrels_path, metric)
+    # temp = os.popen(f'python -m pyserini.eval.trec_eval -c -M 10 -m ndcg_cut.10 {qrels_path} {result_path}')
+    # ndcg = temp.readlines()[5].split('\t')[-1].replace('\n','') if len(temp) > 4 else 0
+    return ndcg
+
 
 if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     bsa = BSA('bert-base-multilingual-cased', device)
 
+    all_lang_ndcgs = defaultdict(dict) # for logging
     for test_lang in LANGUAGES: # ['sw']
         
         # docid2doc_dict = {
@@ -207,9 +239,9 @@ if __name__ == "__main__":
 
         for dataset_type in DATASET_PATHS[test_lang].keys(): # ['dev']
             check_dir(f'{RESULT_PATH}/{dataset_type}')
+            ret_path = f'{RESULT_PATH}/{dataset_type}/{test_lang}.txt'
 
             qid2topic_dict = load_topics(DATASET_PATHS[test_lang][dataset_type][0]) # qid2topic_dict = {"1719936#0":"二战是什么时候开始的？"}
-            # qrels_2dict = load_qrels(DATASET_PATHS[test_lang][dataset_type][1])
 
             rets = dict()
             for qid, topic in qid2topic_dict.items():
@@ -221,5 +253,16 @@ if __name__ == "__main__":
                 rets[qid] = ans
             
             print(f'\t{dataset_type} rank_rels done.')
-            write_result(f'{RESULT_PATH}/{dataset_type}/{test_lang}.txt', rets)
-            # results = show_results(test_lang, [])
+            write_result(ret_path, rets)
+
+            # evaluate nDCG@10
+            if len(DATASET_PATHS[test_lang][dataset_type]) > 1:
+                ndcg = evaluateNDCG(DATASET_PATHS[test_lang][dataset_type][1], ret_path)
+                all_lang_ndcgs[test_lang][dataset_type] = ndcg
+            
+    with open('results.log', 'w') as f:
+        f.write(f'+ nDCG@10\n')
+        for test_lang in all_lang_ndcgs:
+            f.write(f'\t+ {test_lang}\n')
+            for dataset_type, score in all_lang_ndcgs[test_lang].items():
+                f.write(f'\t\t+ {dataset_type}:{score}\n')
