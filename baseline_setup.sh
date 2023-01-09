@@ -48,3 +48,6 @@ cd ../../../..
 
 # move the jar files to Pyserini project: target/anserini-X.Y.Z-SNAPSHOT-fatjar.jar into pyserini/resources/jars/
 cp -r ./anserini/target/* ./pyserini/pyserini/resources/jars
+
+# Install datasets
+git clone https://huggingface.co/datasets/miracl/miracl
