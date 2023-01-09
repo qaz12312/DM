@@ -1,8 +1,13 @@
-from keras import models,layers,losses,optimizers,metrics,callbacks
-from tensorflow_addons.losses import sigmoid_focal_crossentropy
+
 from sklearn.linear_model import RidgeClassifier
-from sklearn.svm import SVC,LinearSVC
+
 import numpy as np
+"""
+from keras import models,layers,losses,optimizers,metrics,callbacks
+from sklearn.svm import SVC,LinearSVC
+from sklearn import preprocessing
+import xgboost as xgb
+from tensorflow_addons.losses import sigmoid_focal_crossentropy
 class MyNetWork:
     def augmenting(self,X:np.ndarray):
         return np.hstack((X,np.sqrt(X),np.log2(X*0.75+1),np.exp2(X),X**2))
@@ -50,7 +55,21 @@ class MyLinearSVC:
         X=self.augmenting(X)
         return self.model.decision_function(X)
 
-class MyRidgeClassifier:
+class MyXGBoostClassifier:
+    def __init__(self) -> None:
+        self.model=xgb.XGBClassifier()
+    def fit(self,X,Y):
+        self.xmin=np.min(X,axis=0)
+        self.xmax=np.max(X,axis=0)
+        X=(X-self.xmin)/self.xmax-self.xmin
+        self.model.fit(X,Y)
+    def predict(self,X):
+        X=(X-self.xmin)/self.xmax-self.xmin
+        return self.model.predict_proba(X)[:,1]
+
+"""
+
+class MyRidgeClassifier_NonNeg:
     def augmenting(self,X:np.ndarray):
         def cross(X:np.ndarray):
             temp=[X]
@@ -67,4 +86,25 @@ class MyRidgeClassifier:
         self.model.fit(X,Y)
     def predict(self,X):
         X=self.augmenting(X)
-        return self.model.decision_function(X)
+        return self.model._predict_proba_lr(X)
+
+class MyRidgeClassifier_NonCross_NonNeg:
+    def augmenting(self,X:np.ndarray):
+        return np.hstack((X,np.log2(0.75*X+1),X**2,np.exp(X)-1))
+
+    def __init__(self) -> None:
+        self.model=RidgeClassifier(alpha=0.9,positive=True,solver='lbfgs')
+    def fit(self,X,Y):
+        X=self.augmenting(X)
+        self.model.fit(X,Y)
+    def predict(self,X):
+        X=self.augmenting(X)
+        return self.model._predict_proba_lr(X)[:,1]
+
+class MyRidgeClassifier_NonArg_NonNeg:
+    def __init__(self) -> None:
+        self.model=RidgeClassifier(alpha=0.9,positive=True,solver='lbfgs')
+    def fit(self,X,Y):
+        self.model.fit(X,Y)
+    def predict(self,X):
+        return self.model._predict_proba_lr(X)[:,1]

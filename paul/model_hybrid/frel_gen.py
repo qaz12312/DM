@@ -1,7 +1,8 @@
 from math import log2,sqrt
 import json
 import os
-def dataset_gen(dsp,algos,langs):
+import numpy as np
+def frel_gen(dsp,algos,langs,datasetname):
     def normalize(dc:dict):
         ss=0
         for _,v in dc.items():
@@ -32,9 +33,11 @@ def dataset_gen(dsp,algos,langs):
                         runfile[tid][docid]=rel
             except:
                 pass
-
+            
+            """
             for tid in runfile:
                 normalize(runfile[tid])
+            """
             
             Runfiles.append(runfile)
 
@@ -64,15 +67,18 @@ def dataset_gen(dsp,algos,langs):
                     Y.append(rel)    
         except:
             pass
-        try:
-            os.makedirs(f'datasets/{dsp}')
-        except:
-            pass
-        with open(f'datasets/{dsp}/{lang}.json','w') as f:
-            json.dump((X,Y),f)
+
+        datasetpath=f'dataset/{datasetname}'
+        try:os.makedirs(f'{datasetpath}/rel')
+        except:pass
+        try:os.makedirs(f'{datasetpath}/feature')
+        except:pass
+        np.savetxt(f'{datasetpath}/feature/{lang}_{dsp}.txt',np.array(X),delimiter=',',newline='\n')
+        np.savetxt(f'{datasetpath}/rel/{lang}_{dsp}.txt',np.array(Y),delimiter=',',fmt='%d',newline='\n')
 
 if __name__=='__main__':
     dsp='train'
-    algos=['mdpr','bm25','qld','rm3','rocchio','rocchio-nonrelevant']
+    algos=['mdpr','mdpr_tydi','bm25','qld','rm3','rocchio','rocchio-nonrelevant']
     langs=['ar','bn','en','es','fa','fi','fr','hi','id','ja','ko','ru','sw','te','th','zh']
-    dataset_gen(dsp,algos,langs)
+    datasetname='mdpr_tydi_all'
+    frel_gen(dsp,algos,langs,datasetname)

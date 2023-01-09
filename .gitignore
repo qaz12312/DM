@@ -10,5 +10,6 @@ topics
 trash
 *.zip
 data
-datasets
+dataset
 candidates
+__pycache__

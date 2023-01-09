@@ -9,11 +9,9 @@ url = "https://download.pytorch.org/whl/cu116"
 verify_ssl = false
 
 [packages]
-pyserini = "==0.19.1"
-faiss-cpu = "==1.7.3"
+pyserini = "==1.19.2"
+faiss-cpu = "*"
 matplotlib = "*"
-tensorflow-gpu = "*"
-tensorflow-addons = "*"
 torch = {version="==1.12.0+cu116", index="pytorch"}
 
 [dev-packages]

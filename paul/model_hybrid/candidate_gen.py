@@ -1,7 +1,8 @@
 from math import log2,sqrt
 import json
 import os
-def cand_gen(dsp,algos,langs):
+import numpy as np
+def candidate_gen(dsp,algos,langs,datasetname):
     def normalize(dc:dict):
         ss=0
         for _,v in dc.items():
@@ -12,7 +13,6 @@ def cand_gen(dsp,algos,langs):
             dc[k]/=ss
 
     for lang in langs:
-
         Runfiles=[]
         for algo in algos:
             runfilepath=f'runfiles/{algo}/{lang}_{dsp}.txt'
@@ -30,9 +30,11 @@ def cand_gen(dsp,algos,langs):
                         runfile[tid][docid]=rel
             except:
                 pass
-
+            
+            """
             for tid in runfile:
                 normalize(runfile[tid])
+            """
             
             Runfiles.append(runfile)
 
@@ -53,16 +55,18 @@ def cand_gen(dsp,algos,langs):
             for docid in Runfile[tid]:
                 X.append(Runfile[tid][docid])
                 L.append((tid,docid))
-            
-        try:
-            os.makedirs(f'candidates/{dsp}')
-        except:
-            pass
-        with open(f'candidates/{dsp}/{lang}.json','w') as f:
-            json.dump((X,L),f)
+        
+        datasetpath=f'dataset/{datasetname}'
+        try:os.makedirs(f'{datasetpath}/pair')
+        except:pass
+        try:os.makedirs(f'{datasetpath}/candidate')
+        except:pass
+        np.savetxt(f'{datasetpath}/pair/{lang}_{dsp}.txt',np.array(L,dtype=np.str_),delimiter=',',fmt='%s',newline='\n')
+        np.savetxt(f'{datasetpath}/candidate/{lang}_{dsp}.txt',np.array(X),delimiter=',',newline='\n')
 
 if __name__=='__main__':
-    dsp='train'
+    dsp='dev'
     algos=['mdpr','bm25','qld','rm3','rocchio','rocchio-nonrelevant']
     langs=['ar','bn','en','es','fa','fi','fr','hi','id','ja','ko','ru','sw','te','th','zh']
-    cand_gen(dsp,algos,langs)
+    datasetname='all'
+    candidate_gen(dsp,algos,langs,datasetname)

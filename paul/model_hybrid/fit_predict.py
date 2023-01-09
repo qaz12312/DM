@@ -1,32 +1,27 @@
-from keras import models,layers,losses,optimizers,metrics,callbacks
-from tensorflow_addons.losses import sigmoid_focal_crossentropy
 from .models import *
 import json
 import os
 import numpy as np
 
-def model_hybrid(train_dsp,val_dsp,langs,methodname):
+def fit_predict(Model,datasetname,train_dsp,val_dsp,langs,methodname,hits):
     for lang in langs:
-        dataset_path=f'datasets/{train_dsp}/{lang}.json'
-        with open(dataset_path,'r') as f:
-            X_train,Y_train=json.load(f)
-            X_train=np.array(X_train)
-            Y_train=np.array(Y_train)
+        X_train=np.loadtxt(f'dataset/{datasetname}/feature/{lang}_{train_dsp}.txt',dtype=np.float64,delimiter=',')
+        Y_train=np.loadtxt(f'dataset/{datasetname}/rel/{lang}_{train_dsp}.txt',dtype=np.float64,delimiter=',')
             
-        model=MyRidgeClassifier()
+        model=Model()
         print(f'{lang} model fitting...')
         model.fit(X_train,Y_train)
         print(f'finish fit!')
 
-        cand_path=f'candidates/{val_dsp}/{lang}.json'
-        with open(cand_path,'r') as f:
-            X_test,L_test=json.load(f)
-            X_test=np.array(X_test)
+        X_test:np.ndarray=np.loadtxt(f'dataset/{datasetname}/candidate/{lang}_{val_dsp}.txt',dtype=np.float64,delimiter=',')
 
         print(f'{lang} model predicting...')
-        Y_test=model.predict(X_test)
+        Y_test:np.ndarray=model.predict(X_test)
         print(f'finish predict!')
 
+        Y_test=Y_test.tolist()
+        with open(f'dataset/{datasetname}/pair/{lang}_{val_dsp}.txt','r') as f:
+            L_test=[li[:-1].split(',')for li in f.readlines()]
         for i in range(len(L_test)):
             L_test[i].append(float(Y_test[i]))
         
@@ -36,7 +31,7 @@ def model_hybrid(train_dsp,val_dsp,langs,methodname):
             if L_test[last_i][0] != L_test[i][0]:
                 rank=sorted(L_test[last_i:i],key=lambda kkv:-kkv[2])
                 last_i=i
-                Result+=rank[:100]
+                Result+=rank[:hits]
 
         rank=sorted(L_test[last_i:],key=lambda kkv:-kkv[2])
         Result+=rank[:100]
@@ -52,7 +47,7 @@ def model_hybrid(train_dsp,val_dsp,langs,methodname):
                 f.write(f'{tid} Q0 {docid} {rk} {rel} {methodname}\n')
 if __name__=='__main__':
     langs=['ar','bn','en','es','fa','fi','fr','hi','id','ja','ko','ru','sw','te','th','zh']
-    model_hybrid('train','dev',langs)
+    fit_predict(MyRidgeClassifier_NonNeg,'all','train','dev',langs,'default_model_hybrid',100)
 
 
 
